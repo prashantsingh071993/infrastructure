@@ -1,0 +1,51 @@
+[
+  {
+    "ParameterKey": "VPCName",
+    "ParameterValue": "MyVPC"
+  }, 
+  {
+    "ParameterKey": "VPCCIDR",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "Subnet01CIDR",
+    "ParameterValue": "10.0.1.0/24"
+  },
+  {
+    "ParameterKey": "Subnet02CIDR",
+    "ParameterValue": "10.0.2.0/24"
+  }, 
+  {
+    "ParameterKey": "Subnet03CIDR",
+    "ParameterValue": "10.0.3.0/24"
+  }, 
+  {
+    "ParameterKey": "Subnet01Name",
+    "ParameterValue": "Subnet01"
+  }, 
+  {
+    "ParameterKey": "Subnet02Name",
+    "ParameterValue": "Subnet02"
+  }, 
+  {
+    "ParameterKey": "Subnet03Name",
+    "ParameterValue": "Subnet03"
+  }, 
+  {
+    "ParameterKey": "InternetGatewayName",
+    "ParameterValue": "InternetGateway"
+  }, 
+  {
+    "ParameterKey": "RouteTableName",
+    "ParameterValue": "RouteTable"
+  }, 
+  {
+    "ParameterKey": "Region",
+    "ParameterValue": "us-east-1"
+  },
+  {
+    "ParameterKey": "AMI",
+    "ParameterValue": "ami-081cc98cebc01174d"
+  }
+]
+
