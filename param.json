@@ -1,4 +1,5 @@
 [
+
   {
     "ParameterKey": "VPCName",
     "ParameterValue": "MyVPC"
@@ -41,11 +42,16 @@
   }, 
   {
     "ParameterKey": "Region",
-    "ParameterValue": "us-east-1"
+    "ParameterValue": "us-east-2"
+  },
+  {
+    "ParameterKey": "TransitionDays",
+    "ParameterValue": "30"
   },
   {
     "ParameterKey": "AMI",
-    "ParameterValue": "ami-081cc98cebc01174d"
+    "ParameterValue": "ami-036a034cc552b82e8"
   }
 ]
+
 

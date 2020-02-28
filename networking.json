@@ -251,7 +251,7 @@
            "InstanceType": {
              "Ref": "InstanceTypeParameter"
            },
-           "KeyName": "waqarkey",
+           "KeyName": "keypair",
            "SubnetId": {
              "Ref": "Subnet01"
            }
