@@ -32,10 +32,9 @@ jobs:
           command: |
             echo "Your build number is ${CIRCLE_BUILD_NUM}"
             pwd
-            rm -rf cd_artifact
             mkdir -p codedeploy_artifact
             pwd
-            ls -la
+            cp infrastructure/* .
             
 
 
