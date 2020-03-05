@@ -34,7 +34,7 @@ jobs:
             pwd
             mkdir -p codedeploy_artifact
             pwd
-            cp infrastructure/* .
+            cp ~/assignment7/infrastructure/* .
             
 
 
