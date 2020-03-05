@@ -33,5 +33,6 @@ jobs:
           command: |
             echo "Your build number is ${CIRCLE_BUILD_NUM}"
             pwd
+            mkdir -p cd_artifact
 
 
