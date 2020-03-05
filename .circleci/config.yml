@@ -15,6 +15,17 @@ jobs:
 
     steps:
       - checkout
+
+
+      - run:
+          name: install dependencies
+          command: |
+            sudo apt-get update && sudo apt-get install wget zip unzip
+            python3 -m venv venv
+            . venv/bin/activate
+      - run:
+          name: install awscli
+          command: sudo pip install awscli
       
       - run: 
           name: artifacts
@@ -23,6 +34,8 @@ jobs:
             pwd
             rm -rf cd_artifact
             mkdir -p codedeploy_artifact
+            pwd
+            ls -la
             
 
 
