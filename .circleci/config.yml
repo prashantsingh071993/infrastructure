@@ -34,7 +34,8 @@ jobs:
             pwd
             mkdir -p codedeploy_artifact
             pwd
-            cp ~/assignment7/infrastructure/* .
+            cp -r /home/circleci/project/* /home/circleci/project/codedeploy_artifact
+            ls -al
             
 
 
