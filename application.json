@@ -732,6 +732,8 @@
                                 " >> custom.sh\n",
                                 "sudo echo export RDS_USERNAME=dbuser",
                                 " >> custom.sh\n",
+ 				"sudo echo export DBName=csye6225",
+                                " >> custom.sh\n",
                                 "sudo echo export RDS_PASSWORD=password",
                                 " >> custom.sh\n",
                                 "sudo echo export S3_BUCKET_ADDR=",
