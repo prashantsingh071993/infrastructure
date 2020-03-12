@@ -1,9 +1,8 @@
 [
-
   {
     "ParameterKey": "VPCName",
     "ParameterValue": "MyVPC"
-  }, 
+  },
   {
     "ParameterKey": "VPCCIDR",
     "ParameterValue": "10.0.0.0/16"
@@ -15,34 +14,34 @@
   {
     "ParameterKey": "Subnet02CIDR",
     "ParameterValue": "10.0.2.0/24"
-  }, 
+  },
   {
     "ParameterKey": "Subnet03CIDR",
     "ParameterValue": "10.0.3.0/24"
-  }, 
+  },
   {
     "ParameterKey": "Subnet01Name",
     "ParameterValue": "Subnet01"
-  }, 
+  },
   {
     "ParameterKey": "Subnet02Name",
     "ParameterValue": "Subnet02"
-  }, 
+  },
   {
     "ParameterKey": "Subnet03Name",
     "ParameterValue": "Subnet03"
-  }, 
+  },
   {
     "ParameterKey": "InternetGatewayName",
     "ParameterValue": "InternetGateway"
-  }, 
+  },
   {
     "ParameterKey": "RouteTableName",
     "ParameterValue": "RouteTable"
-  }, 
+  },
   {
     "ParameterKey": "Region",
-    "ParameterValue": "us-east-2"
+    "ParameterValue": "us-east-1"
   },
   {
     "ParameterKey": "TransitionDays",
@@ -50,8 +49,10 @@
   },
   {
     "ParameterKey": "AMI",
-    "ParameterValue": "ami-036a034cc552b82e8"
+    "ParameterValue": "ami-06d6b40f07a7fc67d"
+  },
+  {
+    "ParameterKey": "CodeDeployS3Bucket",
+    "ParameterValue": "codedeploy.singhprasha.me"
   }
 ]
-
-
