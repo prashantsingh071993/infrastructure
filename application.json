@@ -722,6 +722,7 @@
                                         "Endpoint.Address"
                                     ]
                                 },
+				                " >> custom.sh\n",
                                 "sudo echo export RDS_PORT=",
                                 {
                                     "Fn::GetAtt": [
@@ -732,7 +733,7 @@
                                 " >> custom.sh\n",
                                 "sudo echo export RDS_USERNAME=dbuser",
                                 " >> custom.sh\n",
- 				"sudo echo export DBName=csye6225",
+ 				                "sudo echo export DBName=csye6225",
                                 " >> custom.sh\n",
                                 "sudo echo export RDS_PASSWORD=password",
                                 " >> custom.sh\n",
@@ -748,6 +749,7 @@
             }
         }
     },
+
 
 
 "Outputs": {
