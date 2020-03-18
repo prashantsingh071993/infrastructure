@@ -672,9 +672,12 @@
                         }
                     ]
                 },
-                "Path": "/"
-            }
-        },
+         	"ManagedPolicyArns": [
+          		"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+        ],
+        "RoleName": "EC2CSYE6225Role"
+      }
+    },
         "EC2Instance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
