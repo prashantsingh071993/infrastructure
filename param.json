@@ -49,7 +49,7 @@
   },
   {
     "ParameterKey": "AMI",
-    "ParameterValue": "ami-06d6b40f07a7fc67d"
+    "ParameterValue": "ami-052355b06504db8e6"
   },
   {
     "ParameterKey": "CodeDeployS3Bucket",
