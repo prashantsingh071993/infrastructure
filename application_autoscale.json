@@ -611,9 +611,7 @@
                             {
                                 "Ref": "S3Bucket"
                             },
-                            " >> custom.sh\n",
-                            "sudo echo export DOMAIN_NAME=", {"Ref": "DomainName"}, 
-                            ">> custom.sh\n"
+                            " >> custom.sh\n"
                         ]
                     ]
                 }
