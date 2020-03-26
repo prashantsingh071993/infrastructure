@@ -43,6 +43,9 @@
         "CodeDeployS3Bucket": {
             "Type": "String"
         },
+        "DomainName": {
+            "Type": "String"
+          },
         "InstanceTypeParameter": {
             "Type": "String",
             "Default": "t2.micro",
@@ -513,15 +516,108 @@
                   }
                 }
               ],
-
+              
+              "AutoScalingGroups" : [ {"Ref": "WebServerGroup" }],
               "ServiceRoleArn": {
                 "Fn::GetAtt": [
                   "CodeDeployServiceRole",
                   "Arn"
                 ]
-              }
-      
+              }     
 
+            }
+        },
+         
+        
+        "WebServerGroup" : {
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "DependsOn" : "ElasticLoadBalancer",
+            "Properties" : {
+              "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
+              "VPCZoneIdentifier" : [{
+                "Ref": "Subnet01"
+              },
+
+              {
+                "Ref": "Subnet02"
+              },
+              {
+                "Ref": "Subnet03"
+              }],
+              "TargetGroupARNs":[{"Ref": "LoadBalancerTargetGroup"}],
+              "Cooldown" : "60",
+              "MinSize" : "3",
+              "MaxSize" : "10",
+              "DesiredCapacity" : "3"
+            }
+          },
+          "LaunchConfig" : {
+            "Type" : "AWS::AutoScaling::LaunchConfiguration",
+            "Properties" : {
+              "AssociatePublicIpAddress" : "true",
+              "KeyName": "keypair_prod",
+              "ImageId": {
+                "Ref": "AMI"
+              },
+              "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+              "InstanceType": {
+                "Ref": "InstanceTypeParameter"
+            },
+              "IamInstanceProfile": {
+                "Ref": "IAMProfile"
+              },
+              "BlockDeviceMappings": [
+                {
+                  "DeviceName": "/dev/sda1",
+                  "Ebs": {
+                    "VolumeType": "gp2",
+                    "DeleteOnTermination": "true",
+                    "VolumeSize": "20"
+                  }
+                }
+              ],
+              "UserData": {
+                "Fn::Base64": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "#cloud-boothook\n",
+                            "#!/bin/sh\n",
+                            "cd /etc/profile.d\n",
+                            "sudo touch custom.sh\n",
+                            "sudo echo export RDS_HOSTNAME=",
+                            {
+                                "Fn::GetAtt": [
+                                    "RDS",
+                                    "Endpoint.Address"
+                                ]
+                            },
+                            " >> custom.sh\n",
+                            "sudo echo export RDS_PORT=",
+                            {
+                                "Fn::GetAtt": [
+                                    "RDS",
+                                    "Endpoint.Port"
+                                ]
+                            },
+                            " >> custom.sh\n",
+                            "sudo echo export RDS_USERNAME=dbuser",
+                            " >> custom.sh\n",
+                             "sudo echo export DBName=csye6225",
+                            " >> custom.sh\n",
+                            "sudo echo export RDS_PASSWORD=password",
+                            " >> custom.sh\n",
+                            "sudo echo export S3_BUCKET_ADDR=",
+                            {
+                                "Ref": "S3Bucket"
+                            },
+                            " >> custom.sh\n",
+                            "sudo echo export DOMAIN_NAME=", {"Ref": "DomainName"}, 
+                            ">> custom.sh\n"
+                        ]
+                    ]
+                }
+            }
             }
         },
 
@@ -529,8 +625,176 @@
 
 
 
+        "WebServerScaleUpPolicy" : {
+                "Type" : "AWS::AutoScaling::ScalingPolicy",
+                "Properties" : {
+                  "AdjustmentType" : "ChangeInCapacity",
+                  "AutoScalingGroupName" : { "Ref" : "WebServerGroup" },
+                  "Cooldown" : "60",
+                  "ScalingAdjustment" : "1"
+                }
+              },
+        "WebServerScaleDownPolicy" : {
+                "Type" : "AWS::AutoScaling::ScalingPolicy",
+                "Properties" : {
+                  "AdjustmentType" : "ChangeInCapacity",
+                  "AutoScalingGroupName" : { "Ref" : "WebServerGroup" },
+                  "Cooldown" : "60",
+                  "ScalingAdjustment" : "-1"
+                }
+              },
 
 
+         "InstanceSecurityGroup" : {
+                "Type" : "AWS::EC2::SecurityGroup",
+                "Properties" : {
+                 "GroupDescription" : "Enable Application access and HTTP from the load balancer only",
+                 "VpcId": {
+                   "Ref": "VPC"
+                 },
+                 "SecurityGroupIngress" : [ {
+                    "IpProtocol": "tcp",
+                    "FromPort": "3000",
+                    "ToPort": "3000",
+                    "SourceSecurityGroupId" : {"Fn::Select" : [0, {"Fn::GetAtt" : ["ElasticLoadBalancer", "SecurityGroups"]}]}
+                  },
+                  {
+                    "IpProtocol" : "tcp",
+                    "FromPort" : "80",
+                    "ToPort" : "80",
+                    "CidrIp": "0.0.0.0/0"
+                  } ]
+                }
+            },
+
+            "DNSRecord" : {
+                "Type" : "AWS::Route53::RecordSet",
+                "DependsOn" : "ElasticLoadBalancer",
+                "Properties" : {
+                  "AliasTarget" :{
+                    "DNSName" : {"Fn::GetAtt":["ElasticLoadBalancer","DNSName"]},
+                    "EvaluateTargetHealth" : "true",
+                    "HostedZoneId" : {"Fn::GetAtt":["ElasticLoadBalancer","CanonicalHostedZoneID"]}
+                    },
+                   "HostedZoneName" : {"Fn::Join" : [ "", [ {"Ref":"DomainName"}, "."] ]},
+                   "Name" : {"Fn::Join" : [ "", [ {"Ref":"DomainName"}, "."] ]},
+                   "Type" : "A"
+                }
+             },
+
+
+            "CPUAlarmHigh": {
+                "Type": "AWS::CloudWatch::Alarm",
+                "Properties": {
+                   "AlarmDescription": "Scale-up if CPU > 5% for 2 minutes",
+                   "MetricName": "CPUUtilization",
+                   "Namespace": "AWS/EC2",
+                   "Statistic": "Average",
+                   "Period": "60",
+                   "EvaluationPeriods": "2",
+                   "Threshold": "3",
+                   "AlarmActions": [ { "Ref": "WebServerScaleUpPolicy" } ],
+                   "Dimensions": [
+                     {
+                       "Name": "AutoScalingGroupName",
+                       "Value": { "Ref": "WebServerGroup" }
+                     }
+                   ],
+                   "ComparisonOperator": "GreaterThanThreshold"
+                 }
+               },
+               "CPUAlarmLow": {
+                "Type": "AWS::CloudWatch::Alarm",
+                "Properties": {
+                   "AlarmDescription": "Scale-down if CPU < 3% for 2 minutes",
+                   "MetricName": "CPUUtilization",
+                   "Namespace": "AWS/EC2",
+                   "Statistic": "Average",
+                   "Period": "60",
+                   "EvaluationPeriods": "2",
+                   "Threshold": "2",
+                   "AlarmActions": [ { "Ref": "WebServerScaleDownPolicy" } ],
+                   "Dimensions": [
+                     {
+                       "Name": "AutoScalingGroupName",
+                       "Value": { "Ref": "WebServerGroup" }
+                     }
+                   ],
+                   "ComparisonOperator": "LessThanThreshold"
+                 }
+               },
+
+               "ElasticLoadBalancer" : {
+                "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+                "Properties" : {
+                  "Subnets" : [{
+                      "Ref": "Subnet01"
+                  },
+                  {
+                      "Ref": "Subnet02"
+                  },
+                  {
+                      "Ref": "Subnet03"
+                  }],
+                  "SecurityGroups": [{ "Ref" : "LoadBalancerSecurityGroup"}]
+                }
+              },
+              "LoadBalancerListener" : {
+                "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+                "Properties" : {
+                  "DefaultActions" : [{
+                    "Type" : "forward",
+                    "TargetGroupArn" : { "Ref" : "LoadBalancerTargetGroup" }
+                  }],
+                  "LoadBalancerArn" : { "Ref" : "ElasticLoadBalancer" },
+                  "Port" : "80",
+                  "Protocol" : "HTTP"
+                }
+              },
+        
+          
+              "LoadBalancerTargetGroup" : {
+                "Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+                "Properties" : {
+                "HealthCheckIntervalSeconds" : 30,
+                "HealthCheckTimeoutSeconds" : 5,
+                "HealthCheckPath" : "/check",
+                "Name":"MyTargetGroup",
+                "HealthyThresholdCount" : 2,
+                "Port" : 3000,
+                "Protocol" : "HTTP",
+                "UnhealthyThresholdCount" : 3,
+                "VpcId": {
+                  "Ref": "VPC"
+                }
+              }
+            },
+        "LoadBalancerSecurityGroup":{
+                "Type":"AWS::EC2::SecurityGroup",
+                "Properties":{
+                  "GroupName": "LoadBalancer_SG",
+                  "GroupDescription":"enable HTTP access 80 and ssh access 22",
+                  "VpcId": {
+                    "Ref": "VPC"
+                   },
+                  "SecurityGroupIngress":[
+                    {
+                      "IpProtocol": "tcp",
+                      "FromPort": "80",
+                      "ToPort": "80",
+                      "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                      "IpProtocol": "tcp",
+                      "FromPort": "3000",
+                      "ToPort": "3000",
+                      "CidrIp": "0.0.0.0/0"
+                    }
+                  ]
+                }
+              },
+        
+        
         "ApplicationSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -565,27 +829,29 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Allow http to client host",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 3306,
-                        "ToPort": 3306,
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
-                "SecurityGroupEgress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": 80,
-                        "ToPort": 80,
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
                 "VpcId": {
                     "Ref": "VPC"
                 }
             }
         },
+
+        "SecurityGroupIngressRDS": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+              "GroupId": {
+                "Ref": "DatabaseSecurityGroup"
+              },
+              "IpProtocol": "tcp",
+              "FromPort": 3306,
+              "ToPort": 3306,
+              "SourceSecurityGroupId": {
+                "Fn::GetAtt": [
+                  "InstanceSecurityGroup",
+                  "GroupId"
+                ]
+              }
+            }
+          },
         "RDSSubnetGroup": {
             "Type": "AWS::RDS::DBSubnetGroup",
             "Properties": {
@@ -677,81 +943,10 @@
         ],
         "RoleName": "EC2CSYE6225Role"
       }
-    },
-        "EC2Instance": {
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "ImageId": {
-                    "Ref": "AMI"
-                },
-                "InstanceType": {
-                    "Ref": "InstanceTypeParameter"
-                },
-                "KeyName": "keypair_prod",
-                "SecurityGroupIds": [
-                    {
-                        "Ref": "ApplicationSecurityGroup"
-                    }
-                ],
-                "BlockDeviceMappings": [
-                    {
-                        "DeviceName": "/dev/sda1",
-                        "Ebs": {
-                            "VolumeType": "gp2",
-                            "DeleteOnTermination": "true",
-                            "VolumeSize": "20"
-                        }
-                    }
-                ],
-                "SubnetId": {
-                    "Ref": "Subnet01"
-                },
-                "IamInstanceProfile": {
-                    "Ref": "IAMProfile"
-                },
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#cloud-boothook\n",
-                                "#!/bin/sh\n",
-                                "cd /etc/profile.d\n",
-                                "sudo touch custom.sh\n",
-                                "sudo echo export RDS_HOSTNAME=",
-                                {
-                                    "Fn::GetAtt": [
-                                        "RDS",
-                                        "Endpoint.Address"
-                                    ]
-                                },
-				                " >> custom.sh\n",
-                                "sudo echo export RDS_PORT=",
-                                {
-                                    "Fn::GetAtt": [
-                                        "RDS",
-                                        "Endpoint.Port"
-                                    ]
-                                },
-                                " >> custom.sh\n",
-                                "sudo echo export RDS_USERNAME=dbuser",
-                                " >> custom.sh\n",
- 				                "sudo echo export DBName=csye6225",
-                                " >> custom.sh\n",
-                                "sudo echo export RDS_PASSWORD=password",
-                                " >> custom.sh\n",
-                                "sudo echo export S3_BUCKET_ADDR=",
-                                {
-                                    "Ref": "S3Bucket"
-                                },
-                                " >> custom.sh\n"
-                            ]
-                        ]
-                    }
-                }
-            }
-        }
-    },
+    }
+},
+  
+            
 
 
 
