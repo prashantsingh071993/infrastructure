@@ -48,11 +48,15 @@
     "ParameterValue": "30"
   },
   {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "prod.singhprasha.me"
+  },
+  {
     "ParameterKey": "AMI",
-    "ParameterValue": "ami-052355b06504db8e6"
+    "ParameterValue": "ami-079e4ace54e3ee0f4"
   },
   {
     "ParameterKey": "CodeDeployS3Bucket",
-    "ParameterValue": "codedeploy.singhprasha.me"
+    "ParameterValue": "codedeploy.prod.singhprasha.me"
   }
 ]
