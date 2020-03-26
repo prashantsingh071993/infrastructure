@@ -546,9 +546,9 @@
               }],
               "TargetGroupARNs":[{"Ref": "LoadBalancerTargetGroup"}],
               "Cooldown" : "60",
-              "MinSize" : "3",
-              "MaxSize" : "10",
-              "DesiredCapacity" : "3"
+              "MinSize" : "2",
+              "MaxSize" : "5",
+              "DesiredCapacity" : "2"
             }
           },
           "LaunchConfig" : {
@@ -692,7 +692,7 @@
                    "Statistic": "Average",
                    "Period": "60",
                    "EvaluationPeriods": "2",
-                   "Threshold": "3",
+                   "Threshold": "5",
                    "AlarmActions": [ { "Ref": "WebServerScaleUpPolicy" } ],
                    "Dimensions": [
                      {
@@ -712,7 +712,7 @@
                    "Statistic": "Average",
                    "Period": "60",
                    "EvaluationPeriods": "2",
-                   "Threshold": "2",
+                   "Threshold": "3",
                    "AlarmActions": [ { "Ref": "WebServerScaleDownPolicy" } ],
                    "Dimensions": [
                      {
