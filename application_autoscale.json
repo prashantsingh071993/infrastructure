@@ -390,6 +390,35 @@
                 ]
             }
         },
+
+
+        "CircleCILambdaRole": {
+            "Type": "AWS::IAM::Policy",
+            "DependsOn": "LambdaFunction",
+            "Properties": {
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Action": [
+                      "lambda:*"
+                    ],
+                    "Resource": [
+                      {
+                        "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:EmailService"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "PolicyName": "CircleCILambdaRole",
+              "Users": [
+                "circleci"
+              ]
+            }
+          },
+        
         "WebAppS3Policy": {
             "Type": "AWS::IAM::Policy",
             "DependsOn": "EC2CSYE6225Role",
@@ -611,7 +640,9 @@
                             {
                                 "Ref": "S3Bucket"
                             },
-                            " >> custom.sh\n"
+                            " >> custom.sh\n",
+                            "sudo echo export DOMAIN_NAME=", {"Ref": "DomainName"}, ">> custom.sh\n",
+                            "cd ~\n"
                         ]
                     ]
                 }
@@ -792,37 +823,6 @@
                 }
               },
         
-        
-        "ApplicationSecurityGroup": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupName": "ApplicationSecurityGroup",
-                "GroupDescription": "Security tag for EC2",
-                "SecurityGroupIngress": [
-                    {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": 22,
-                        "IpProtocol": "tcp",
-                        "ToPort": 22
-                    },
-                    {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": 80,
-                        "IpProtocol": "tcp",
-                        "ToPort": 80
-                    },
-                    {
-                        "CidrIp": "0.0.0.0/0",
-                        "FromPort": 3000,
-                        "IpProtocol": "tcp",
-                        "ToPort": 3000
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            }
-        },
         "DatabaseSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -919,6 +919,7 @@
         },
         "EC2CSYE6225Role": {
             "Type": "AWS::IAM::Role",
+            "DependsOn": "SNS",
             "Properties": {
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
@@ -937,12 +938,126 @@
                     ]
                 },
          	"ManagedPolicyArns": [
-          		"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+                  "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+                  "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
         ],
         "RoleName": "EC2CSYE6225Role"
       }
-    }
-},
+    },
+
+
+    "DynamoDBTable": {
+        "Type": "AWS::DynamoDB::Table",
+        "Properties": {
+          "AttributeDefinitions": [
+            {
+              "AttributeName": "id",
+              "AttributeType": "S"
+            }
+          ],
+          "KeySchema": [
+            {
+              "AttributeName": "id",
+              "KeyType": "HASH"
+            }
+          ],
+          "TableName": "csye6225",
+          "BillingMode": "PAY_PER_REQUEST",
+          "TimeToLiveSpecification": {
+            "AttributeName": "ttl",
+            "Enabled": true
+          }
+        }
+      },
+      "LambdaFunction": {
+        "Type": "AWS::Lambda::Function",
+        "DependsOn": "LambdaExecutionRole",
+        "Properties": {
+          "Code": {
+            "ZipFile": {
+              "Fn::Join": [
+                "\n",
+                [
+                  "exports.emailService = function (event, context, callback){ console.log('Hello'); callback(null); }"
+                ]
+              ]
+            }
+          },
+          "FunctionName":"EmailService",
+          "Handler": "index.emailService",
+          "Environment" : {"Variables": {"DOMAIN_NAME":{"Fn::Sub": "${DomainName}"}}},
+          "Role": {
+            "Fn::GetAtt": [
+              "LambdaExecutionRole",
+              "Arn"
+            ]
+          },
+          "Runtime": "nodejs12.x",
+          "Timeout": 25
+        }
+      },
+      "LambdaInvokePermission": {
+        "Type": "AWS::Lambda::Permission",
+        "DependsOn": "SNS",
+        "Properties": {
+          "FunctionName": {
+            "Fn::GetAtt": [
+              "LambdaFunction",
+              "Arn"
+            ]
+          },
+          "Action": "lambda:InvokeFunction",
+          "Principal": "sns.amazonaws.com",
+          "SourceArn": {
+            "Ref": "SNS"
+          }
+        }
+      },
+      "LambdaExecutionRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": "lambda.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+              }
+            ]
+          },
+          "ManagedPolicyArns": [
+            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+            "arn:aws:iam::aws:policy/AmazonSESFullAccess",
+            "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+          ]
+        }
+      },
+
+    "SNS": {
+        "Type": "AWS::SNS::Topic",
+        "DependsOn": "LambdaFunction",
+        "Properties": {
+          "Subscription": [
+            {
+              "Endpoint": {
+                "Fn::GetAtt": [
+                  "LambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Protocol": "lambda"
+            }
+          ],
+          "TopicName": "EmailTopic"
+        }
+      }
+    },
+
+
+
   
             
 
@@ -1007,3 +1122,4 @@
 },
 "AWSTemplateFormatVersion": "2010-09-09"
 }
+
