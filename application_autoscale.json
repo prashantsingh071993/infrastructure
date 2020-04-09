@@ -46,6 +46,9 @@
         "DomainName": {
             "Type": "String"
           },
+        "Certificate": {
+            "Type": "String"
+        },
         "InstanceTypeParameter": {
             "Type": "String",
             "Default": "t2.micro",
@@ -693,8 +696,8 @@
                   },
                   {
                     "IpProtocol" : "tcp",
-                    "FromPort" : "80",
-                    "ToPort" : "80",
+                    "FromPort" : "443",
+                    "ToPort" : "443",
                     "CidrIp": "0.0.0.0/0"
                   } ]
                 }
@@ -784,6 +787,21 @@
                   "Protocol" : "HTTP"
                 }
               },
+
+              "LoadBalancerListenerSSL" : {
+                "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+                "Properties" : {
+                  "Certificates" : [
+                    {"CertificateArn" : {"Fn::Sub": "${Certificate}"}} ],
+                  "DefaultActions" : [{
+                    "Type" : "forward",
+                    "TargetGroupArn" : { "Ref" : "LoadBalancerTargetGroup" }
+                  }],
+                  "LoadBalancerArn" : { "Ref" : "ElasticLoadBalancer" },
+                  "Port" : "443",
+                  "Protocol" : "HTTPS"
+                }
+              },
         
           
               "LoadBalancerTargetGroup" : {
@@ -806,15 +824,15 @@
                 "Type":"AWS::EC2::SecurityGroup",
                 "Properties":{
                   "GroupName": "LoadBalancer_SG",
-                  "GroupDescription":"enable HTTP access 80 and ssh access 22",
+                  "GroupDescription":"enable HTTP access 443 and ssh access 22",
                   "VpcId": {
                     "Ref": "VPC"
                    },
-                  "SecurityGroupIngress":[
+                   "SecurityGroupIngress":[
                     {
                       "IpProtocol": "tcp",
-                      "FromPort": "80",
-                      "ToPort": "80",
+                      "FromPort": "443",
+                      "ToPort": "443",
                       "CidrIp": "0.0.0.0/0"
                     },
                     {
@@ -880,6 +898,10 @@
                 "MasterUserPassword": "password",
                 "MasterUsername": "dbuser",
                 "MultiAZ": false,
+                "StorageEncrypted": true,
+                "DBParameterGroupName":                     {
+                    "Ref": "RDSDBParameterGroup"
+                },
                 "PubliclyAccessible": false,
                 "DBSubnetGroupName": {
                     "Ref": "RDSSubnetGroup"
@@ -892,6 +914,18 @@
             },
             "DeletionPolicy": "Delete"
         },
+        "RDSDBParameterGroup": {
+                "Type": "AWS::RDS::DBParameterGroup",
+                "Properties": {
+                    "Description": "RDS Parameter Group",
+                    "Family": "mysql5.7",
+                    "Parameters": {
+                        "performance_schema": 1
+                    }
+                }
+            },
+        
+
         "S3Bucket": {
             "Type": "AWS::S3::Bucket",
             "Properties": {
@@ -1140,3 +1174,4 @@
 },
 "AWSTemplateFormatVersion": "2010-09-09"
 }
+

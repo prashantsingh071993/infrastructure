@@ -53,10 +53,15 @@
   },
   {
     "ParameterKey": "AMI",
-    "ParameterValue": "ami-0345874e3aef8154e"
+    "ParameterValue": "ami-079e4ace54e3ee0f4"
   },
   {
     "ParameterKey": "CodeDeployS3Bucket",
     "ParameterValue": "codedeploy.prod.singhprasha.me"
+  },
+  {
+    "ParameterKey": "Certificate",
+    "ParameterValue": "arn:aws:acm:us-east-1:806505171853:certificate/7e611bb7-e54f-4309-aa0f-8b19178cf817"
   }
 ]
+
