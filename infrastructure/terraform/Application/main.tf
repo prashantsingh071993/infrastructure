@@ -63,10 +63,10 @@ resource "aws_security_group" "database" {
   vpc_id      = "${var.vpc_id}"
   description = "allow incoming database connection"
   ingress {
-    from_port       = 5432
+    from_port       = 3306
     protocol        = "tcp"
     security_groups = ["${aws_security_group.application_security_group.id}"]
-    to_port         = 5432
+    to_port         = 3306
     cidr_blocks     = ["0.0.0.0/0"]
   }
 }
