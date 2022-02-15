@@ -1,0 +1,1 @@
+aws cloudformation create-stack   --stack-name csye6225demo   --parameters file://param.json    --template-body file://application_autoscale.json   --profile prod --region us-east-1 --capabilities CAPABILITY_NAMED_IAM
